@@ -22,6 +22,7 @@
 
 (require 'json)
 (require 'url)
+(require 'request)
 
 ;;;###autoload
 (defgroup currency-convert nil
@@ -66,11 +67,12 @@
   "Internal helper to download exchange rates from `exchangeratesapi.io'."
   (unless (string-blank-p currency-convert-exchangeratesapi-key)
     (with-temp-buffer
-      (let ((url-show-status nil)
-            (url-mime-accept-string "application/json"))
-        (url-insert-file-contents
-         (concat "https://api.exchangeratesapi.io/v1/latest?access_key="
-                 (url-hexify-string currency-convert-exchangeratesapi-key))))
+        (request "https://api.apilayer.com/exchangerates_data/latest"
+          :sync t
+          :headers `(("apiKey" . ,(eval currency-convert-exchangeratesapi-key)))
+          :success (cl-function
+                    (lambda (&key data &allow-other-keys)
+                      (insert data))))
       (write-region nil nil (currency-convert--rates-file)))))
 
 (defun currency-convert-update-rates ()
